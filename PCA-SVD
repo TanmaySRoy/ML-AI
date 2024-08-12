@@ -1,0 +1,109 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # Import for 3D plotting
+from sklearn.datasets import make_swiss_roll
+from sklearn.decomposition import PCA
+
+# Generate the Swiss Roll dataset
+n_samples = 1500
+X, color = make_swiss_roll(n_samples, random_state=0)
+
+# Apply PCA to reduce the data to 2 principal components
+pca = PCA(n_components=2)  # Initialize PCA with 2 components (2D transformation)
+X_pca = pca.fit_transform(X)  # Apply PCA to the original data
+# When the fit transform method is called upon pca, it would do the following operations
+# (1) It first calculated a covariance matrix to understand the variance between the features
+# In our example we have 3 sets of features so the covariance matrix would be a 3x3 matrix that would measure
+# the variance between these features, a positive number indicates a positive covariance between the 2 features
+# a negative number indicates a negative covariance
+# transposing the matrix is fed to numpy's cov function that works on the 'features'
+# (2) It then goes ahead and calculates 2 vectors (a) eigenvalues - that gathers information on how much variance does a principal component 
+# aka (b) eigenvector maintains
+# Sorting the eigenvectors based on the eigenvalues would reveal the principal components along which maximum variance would be maintained
+# In our example there are 3 features and we asked pca to reduce it to 2 dimensions
+# After step 2 is performed,
+# fit_transform would choose the 2 vectors (eigenvectors) that maintains the highest variance and reduce it to 2 dimensions
+# (a) center the original data because the center would remove the bias added from the mean so that the algorithm can focus 
+# on the 'relative' variance as compared to the 'absolute'
+# the reason is to allow the dimensionality reduction to work correctly and co-related everything 'relatively' along the new dimensions
+# (b) multiple the centered datapoints with the principal components to reduce it to the dimensions identified by the 'number of principal components'
+# the plot in the 2D space reveals how the datapoints warps in a 2D space along the chosen principal components maintain 'relativity' and maximum variance
+
+# The below code shows how 'internally' pca from sklearn decomposes the data to a 2D space by
+# extracting a covariance matrix, centering the data, extracting the eigenvalues and eigenvectors
+# and performing a matrix multiplication with the chosen pca from this process with the original datapoints
+
+# Plot the original 3D data
+fig = plt.figure(figsize=(12, 5))
+ax = fig.add_subplot(121, projection='3d')  # Create a 3D subplot
+ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
+# Scatter plot the original data in 3D with color based on the original position
+ax.set_title('Original Swiss Roll Data (3D)')  # Set the title for the subplot
+
+
+# Plot the PCA-transformed 2D data
+ax = fig.add_subplot(122)  # Create a subplot for the 2D plot
+plt.scatter(X_pca[:, 0], X_pca[:, 1], c=color, cmap=plt.cm.Spectral)
+# Scatter plot the PCA-transformed data in 2D with color mapping
+plt.title('PCA of Swiss Roll Data (2D)')  # Set the title for the subplot
+plt.show()  # Display the plots
+
+X.shape, X
+
+# Below are the steps that happen under the hood when pca.fit_transform() is called
+# as you can see the covariance matrix would be used to determine the relative distance from each other along each dimension
+covariance_matrix = np.cov(X.T)
+
+covariance_matrix
+
+covariance_matrix.shape
+
+# eigenvalues are unit vector produced out of a process called Singular Value decomposition that produces 3 metrices
+# 1. U = EigenVectors 
+# 2. E EigenValues 
+# 3. V.T = Transposed value of symmetric matrix extracted out of the original vector A
+# Therefore A = UEV.T
+eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+
+eigenvalues, eigenvectors
+
+# sort based on the most important principal components by their eigenvalues
+idx = eigenvalues.argsort()[::-1]
+
+idx
+
+# See those eigen values
+eigenvalues = eigenvalues[idx]
+
+eigenvalues
+
+# extract the eigenvectors
+eigenvectors = eigenvectors[:,idx]
+
+eigenvectors
+
+# As you can see pca from sklearn also produces the same eigenvectors (as above)
+principal_components = pca.components_
+
+principal_components
+
+P = principal_components
+mean = np.mean(X,axis=0)
+X_centered = X - mean
+mean, X_centered.shape
+
+X_pca_calculated = X_centered @ P.T
+
+X_pca_calculated
+
+X_pca
+
+# eigen vectors produced by PCA but also they are the exact same that we calculated manually using linear algebra
+# so use that to check if the 2 match
+X_pca_eigenvector = eigenvectors[:,:2]
+
+X_pca_eigenvector
+
+X_pca_calculated_with_eigenvectors = X_centered @ X_pca_eigenvector
+
+X_pca_calculated_with_eigenvectors
