@@ -1,3 +1,12 @@
+// If running on Google colab
+// Run the following to setup nvcc (cuda libraries) in google colab to execute c/c++ code
+// !nvidia-smi
+// !pip install git+https://github.com/andreinechaev/nvcc4jupyter.git
+// %load_ext nvcc4jupyter
+// (optional) !pip install nvcc4jupyter
+// !nvcc --version
+// %%cuda (before writing the c or c++ code below)
+
 // This exercise covers why CUDA moved past processing computer graphics rendering pixels to 
 // now supporting parallel computations for Deep Neural Network and Deep learning architectures
 // The primary reason is CUDA C exposes functions and configurations of the parallel CUDA architecture
