@@ -1,0 +1,70 @@
+// This exercise covers why CUDA moved past processing computer graphics rendering pixels to 
+// now supporting parallel computations for Deep Neural Network and Deep learning architectures
+// The primary reason is CUDA C exposes functions and configurations of the parallel CUDA architecture
+// that allows us to compute complex matrix multiplication and other computational problems 
+// specially dealing with matrices. It is as if it was born to help matrix and linear algebra operations
+// The beauty of this is most of the operations that would take upwards of O(n*n) or O(n*n*m) time
+// now can be achieved in unit time i.e. O(1) = constant time, thereby speeding the process of 
+// forward and backward pass in Neural Networks
+// The effects of which can show us how the training speeds up when dealing with millions or billions
+// of parameters [w.x + b]
+ 
+// The below example show how 2 simple vectors are added to produce a 3rd vector
+// The difference is one uses GPU and is run on a device as opposed on the host aka CPU vs other runs
+// on the CPU.
+// Each of the 10 elements of vector a are added to vector be in constant time O(1) since 
+// cuda distributes these unrelated operation to device blocks
+// The same if written and executed on the CPU would require O(n) time as depicted below
+#include <stdio.h>
+
+#define N 10
+
+__global__ void add(int *a, int *b, int *c) {
+    int tid = blockIdx.x;
+    if (tid < N) 
+      c[tid] = a[tid] + b[tid];
+  }
+
+int main(void) {
+    int a[N], b[N], c[N];
+    int *device_for_a, *device_for_b, *device_for_c;
+
+
+    cudaMalloc((void**)&device_for_a, N * sizeof(int));
+    cudaMalloc((void**)&device_for_b, N * sizeof(int));
+    cudaMalloc((void**)&device_for_c, N * sizeof(int));
+
+
+    for(int i=0; i < N; i++) {
+        a[i] = i*i,
+        b[i] = i+1;
+    }
+
+    // move the data to the GPU
+
+    cudaMemcpy(device_for_a, a, N * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_for_a, a, N * sizeof(int), cudaMemcpyDeviceToHost);
+
+    // peform the addition of each unit within the vectors parellely over distributed device blocks
+
+    add<<<N,1>>>(device_for_a, device_for_b, device_for_c);
+
+    // bring back the results back to the CPU
+
+    cudaMemcpy(c, device_for_c, N * sizeof(int), cudaMemcpyDeviceToHost);
+
+    for (int i=0; i< N; i++) {
+        printf ("%d + %d = %d\n", a[i], b[i], c[i]);
+    }
+}
+
+// When this function is called separately without using CUDA 
+// The execution clearly show will require O(N) time
+void add_on_cpu(int *a, int *b, int *c) {
+    int idx = 0;
+    while(idx < N) {
+        c[idx] = a[idx] + b[idx];
+        idx++;
+    }
+
+}
